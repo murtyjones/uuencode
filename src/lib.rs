@@ -15,7 +15,7 @@ fn uuencode_chuck(input: &[u8]) -> [u8;4] {
         32 + ((i[2]<<2) >> 2) ]
 }
 
-fn uuencode(filename: &str, input: &[u8]) -> String {
+pub fn uuencode(filename: &str, input: &[u8]) -> String {
     let mut output : Vec<u8> = Vec::new();
     // in rust, char != u8, so we need to prefix with a b
 
@@ -47,7 +47,7 @@ fn uudecode_chunk(bytes: &[u8]) -> impl Iterator<Item=u8> {
     })
 }
 
-fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
+pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
     let mut lines = encoded.lines();
 
     let name = lines.next().expect("No next lines!").split(" ").collect::<Vec<_>>()[2].to_string(); //eugh
