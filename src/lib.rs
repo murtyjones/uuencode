@@ -91,16 +91,6 @@ fn maybe_pad_line(line: &str) -> String {
 mod test {
     use crate::*;
 
-    fn _write_to_file(filename: String, data: &[u8]) -> std::io::Result<()> {
-        let mut pos = 0;
-        let mut buffer = std::fs::File::create(format!("/Users/murtyjones/Desktop/{}", filename)).expect("Couldn't make file!");
-        while pos < data.len() {
-            let bytes_written = buffer.write(&data[pos..]).expect("Couldn't write to file!");
-            pos += bytes_written;
-        }
-        Ok(())
-    }
-
     #[test]
     fn test_cat() {
         let filename = "wow.jpg";
