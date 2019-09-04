@@ -10,5 +10,6 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 description = "uuencoder/decoder"
 keywords = ["uuencode", "uudecode"]
+repository = "https://github.com/murtyjones/uuencode"
 
 [dependencies]
