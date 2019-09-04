@@ -54,11 +54,12 @@ fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
 
     let mut output: Vec<u8> = Vec::new();
     for line in lines {
-        if let Some(chr) = line.chars().nth(0) {
+        let padded_line = maybe_pad_line(line);
+        if let Some(chr) = padded_line.chars().nth(0) {
             match chr {
                 '`' => break,
                 ' '...'_' => {
-                    for dc in line[1..].as_bytes().chunks(4) {
+                    for dc in padded_line[1..].as_bytes().chunks(4) {
                         output.extend( uudecode_chunk(dc) );
                     }
                 },
@@ -69,15 +70,32 @@ fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
     Some((output, name))
 }
 
+/// Ensure that a line has sufficient padding
+fn maybe_pad_line(line: &str) -> String {
+    const REQUIRED_LENGTH: usize = 61;
+    let actual_length = line.len();
+    let diff = REQUIRED_LENGTH - actual_length;
+    match diff {
+        d if d <= 0 => String::from(line),
+        _ => {
+            let mut padded = String::from(line);
+            for i in 1..=diff {
+                padded.push(' ');
+            }
+            return padded;
+        },
+    }
+}
+
 
 mod test {
     use crate::*;
     use std::io::prelude::*;
     use std::fs::File;
 
-    fn write_to_file(data: &[u8]) -> std::io::Result<()> {
+    fn write_to_file(filename: String, data: &[u8]) -> std::io::Result<()> {
         let mut pos = 0;
-        let mut buffer = std::fs::File::create("/Users/murtyjones/Desktop/wow.jpg").expect("Couldn't make file!");
+        let mut buffer = std::fs::File::create(format!("/Users/murtyjones/Desktop/{}", filename)).expect("Couldn't make file!");
         while pos < data.len() {
             let bytes_written = buffer.write(&data[pos..]).expect("Couldn't write to file!");
             pos += bytes_written;
@@ -87,40 +105,38 @@ mod test {
 
     #[test]
     fn test_cat() {
-        let expected_decoded = "Cat\nCat";
         let filename = "wow.jpg";
-        let expected_encoded = "begin 644 wow.jpg\n#0V%T\n#0V%T\n`\nend";
-        let encoded = uuencode(filename, expected_decoded.as_bytes());
-        let decoded = uudecode(&*encoded).unwrap();
-        assert_eq!(expected_encoded, encoded);
-//        assert_eq!(expected_decoded, decoded.0);
-        assert_eq!(filename, decoded.1);
-    }
-
-    #[test]
-    fn test_truncated_logo() {
-        let expected_decoded = include!("../logo_raw_truncated");
-        let filename = "amglogoa09.jpg";
-        let expected_encoded = "begin 644 amglogoa09.jpg\nM_]C_X  02D9)1@ ! @$!+ $L  #_[0 L4&AO=&]S:&]P(#,N,  X0DE- ^T \n`\nend";
-        let encoded = uuencode(filename, expected_decoded);
-        let decoded = uudecode(&*encoded).unwrap();
-        assert_eq!(expected_encoded, encoded);
-        assert_eq!(expected_decoded.len(), decoded.0.len());
-        assert_eq!(expected_decoded.to_vec(), decoded.0);
-        assert_eq!(filename, decoded.1);
+        let original_encoded = "begin 644 wow.jpg\nM0V%T                                                        \n`\nend";
+        let decoded = uudecode(original_encoded).unwrap();
+        let encoded = uuencode(filename, decoded.0.as_slice());
+        assert_eq!(original_encoded, encoded);
     }
 
     #[test]
     fn test_logo() {
-        let expected_decoded = include!("../logo_raw");
         let filename = "amglogoa09.jpg";
-        let expected_encoded = include_str!("../logo_encoded_padded");
-        let encoded = uuencode(filename, expected_decoded);
-        let decoded = uudecode(&*encoded).unwrap();
-//        write_to_file(decoded.0.as_slice());
-        assert_eq!(expected_encoded, encoded);
-        assert_eq!(expected_decoded.len(), decoded.0.len());
-        assert_eq!(expected_decoded.to_vec(), decoded.0);
-        assert_eq!(filename, decoded.1);
+        let original_encoded = include_str!("../images/logo_encoded_padded").trim();
+        let decoded = uudecode(original_encoded).unwrap();
+        write_to_file(decoded.1, decoded.0.as_slice());
+        let encoded = uuencode(filename, decoded.0.as_slice());
+        assert_eq!(original_encoded, encoded);
+    }
+
+    #[test]
+    fn test_piechart() {
+        let filename = "aumpiechartscombinded5217v4.jpg";
+        let original_encoded = include_str!("../images/piechart_encoded_padded").trim();
+        let decoded = uudecode(original_encoded).unwrap();
+        write_to_file(decoded.1, decoded.0.as_slice());
+        let encoded = uuencode(filename, decoded.0.as_slice());
+        assert_eq!(original_encoded, encoded);
+    }
+    
+    #[test]
+    fn test_pad_line() {
+        let unpadded = r#"=HHH **** "BBB@ HHHH **** "BBB@ HHHH _]D!"#;
+        let padded = r#"=HHH **** "BBB@ HHHH **** "BBB@ HHHH _]D!                    "#;
+        let r = maybe_pad_line(unpadded);
+        assert_eq!(padded, r);
     }
 }
