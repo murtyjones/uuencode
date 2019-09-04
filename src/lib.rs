@@ -15,19 +15,6 @@ fn uuencode_chuck(input: &[u8]) -> [u8;4] {
         32 + ((i[2]<<2) >> 2) ]
 }
 
-// decodes up to 3 bytes
-fn uudecode_chuck(input: &[u8]) -> [u8;4] {
-    // padding is hard
-    let i = [ input[0],
-        *input.get(1).unwrap_or(&0),
-        *input.get(2).unwrap_or(&0) ];
-
-    [ 32 + (i[0]>>2),
-        32 + ((i[0]<<6 | i[1]>>2) >> 2),
-        32 + ((i[1]<<4 | i[2]>>4) >> 2),
-        32 + ((i[2]<<2) >> 2) ]
-}
-
 fn uuencode(filename: &str, input: &[u8]) -> String {
     let mut output : Vec<u8> = Vec::new();
     // in rust, char != u8, so we need to prefix with a b
@@ -85,41 +72,55 @@ fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
 
 mod test {
     use crate::*;
+    use std::io::prelude::*;
+    use std::fs::File;
+
+    fn write_to_file(data: &[u8]) -> std::io::Result<()> {
+        let mut pos = 0;
+        let mut buffer = std::fs::File::create("/Users/murtyjones/Desktop/wow.jpg").expect("Couldn't make file!");
+        while pos < data.len() {
+            let bytes_written = buffer.write(&data[pos..]).expect("Couldn't write to file!");
+            pos += bytes_written;
+        }
+        Ok(())
+    }
 
     #[test]
     fn test_cat() {
-        let input = "Cat\nCat";
+        let expected_decoded = "Cat\nCat";
         let filename = "wow.jpg";
-        let expected_output = "begin 644 wow.jpg\n#0V%T\n#0V%T\n`\nend";
-        let encoded = uuencode(filename, input.as_bytes());
+        let expected_encoded = "begin 644 wow.jpg\n#0V%T\n#0V%T\n`\nend";
+        let encoded = uuencode(filename, expected_decoded.as_bytes());
         let decoded = uudecode(&*encoded).unwrap();
-        assert_eq!(expected_output, encoded);
-//        assert_eq!(input, decoded.0);
+        assert_eq!(expected_encoded, encoded);
+//        assert_eq!(expected_decoded, decoded.0);
         assert_eq!(filename, decoded.1);
     }
 
     #[test]
     fn test_truncated_logo() {
-        let input = include!("../logo_raw_truncated");
+        let expected_decoded = include!("../logo_raw_truncated");
         let filename = "amglogoa09.jpg";
-        let expected_output = "begin 644 amglogoa09.jpg\nM_]C_X  02D9)1@ ! @$!+ $L  #_[0 L4&AO=&]S:&]P(#,N,  X0DE- ^T \n`\nend";
-        let encoded = uuencode(filename, input);
+        let expected_encoded = "begin 644 amglogoa09.jpg\nM_]C_X  02D9)1@ ! @$!+ $L  #_[0 L4&AO=&]S:&]P(#,N,  X0DE- ^T \n`\nend";
+        let encoded = uuencode(filename, expected_decoded);
         let decoded = uudecode(&*encoded).unwrap();
-        assert_eq!(expected_output, encoded);
-        assert_eq!(input.len(), decoded.0.len());
-        assert_eq!(input.to_vec(), decoded.0);
+        assert_eq!(expected_encoded, encoded);
+        assert_eq!(expected_decoded.len(), decoded.0.len());
+        assert_eq!(expected_decoded.to_vec(), decoded.0);
         assert_eq!(filename, decoded.1);
     }
 
     #[test]
     fn test_logo() {
-        let input = include!("../logo_raw");
+        let expected_decoded = include!("../logo_raw");
         let filename = "amglogoa09.jpg";
-        let expected_output = include_str!("../logo_encoded");
-        let encoded = uuencode(filename, input);
-        let decoded = uudecode(expected_output);
-//        assert_eq!(expected_output, encoded);
-//        assert_eq!(expected_output, decoded.0);
-//        assert_eq!(filename, decoded.1);
+        let expected_encoded = include_str!("../logo_encoded_padded");
+        let encoded = uuencode(filename, expected_decoded);
+        let decoded = uudecode(&*encoded).unwrap();
+//        write_to_file(decoded.0.as_slice());
+        assert_eq!(expected_encoded, encoded);
+        assert_eq!(expected_decoded.len(), decoded.0.len());
+        assert_eq!(expected_decoded.to_vec(), decoded.0);
+        assert_eq!(filename, decoded.1);
     }
 }
