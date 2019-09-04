@@ -1,20 +1,3 @@
-extern crate binascii;
-
-use binascii::*;
-
-// encodes up to 3 bytes
-fn uuencode_chuck(input: &[u8]) -> [u8;4] {
-    // padding is hard
-    let i = [ input[0],
-        *input.get(1).unwrap_or(&0),
-        *input.get(2).unwrap_or(&0) ];
-
-    [ 32 + (i[0]>>2),
-        32 + ((i[0]<<6 | i[1]>>2) >> 2),
-        32 + ((i[1]<<4 | i[2]>>4) >> 2),
-        32 + ((i[2]<<2) >> 2) ]
-}
-
 pub fn uuencode(filename: &str, input: &[u8]) -> String {
     let mut output : Vec<u8> = Vec::new();
     // in rust, char != u8, so we need to prefix with a b
@@ -33,18 +16,6 @@ pub fn uuencode(filename: &str, input: &[u8]) -> String {
     output.extend(b"`\nend");
 
     String::from_utf8(output).unwrap()
-}
-
-fn uudecode_chunk(bytes: &[u8]) -> impl Iterator<Item=u8> {
-    let combined: u32 = bytes.iter().enumerate()
-        .fold(0, | acc, (index, &val) | {
-            acc + (((val as u32) - 32) << 6 * (3 - index))
-        });
-
-    (0..3).rev().map(move |val| {
-        let val = (combined >> (8 * val)) & 255;
-        val as u8
-    })
 }
 
 pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
@@ -70,6 +41,30 @@ pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
     Some((output, name))
 }
 
+fn uuencode_chuck(input: &[u8]) -> [u8;4] {
+    // padding is hard
+    let i = [ input[0],
+        *input.get(1).unwrap_or(&0),
+        *input.get(2).unwrap_or(&0) ];
+
+    [ 32 + (i[0]>>2),
+        32 + ((i[0]<<6 | i[1]>>2) >> 2),
+        32 + ((i[1]<<4 | i[2]>>4) >> 2),
+        32 + ((i[2]<<2) >> 2) ]
+}
+
+fn uudecode_chunk(bytes: &[u8]) -> impl Iterator<Item=u8> {
+    let combined: u32 = bytes.iter().enumerate()
+        .fold(0, | acc, (index, &val) | {
+            acc + (((val as u32) - 32) << 6 * (3 - index))
+        });
+
+    (0..3).rev().map(move |val| {
+        let val = (combined >> (8 * val)) & 255;
+        val as u8
+    })
+}
+
 /// Ensure that a line has sufficient padding
 fn maybe_pad_line(line: &str) -> String {
     const REQUIRED_LENGTH: usize = 61;
@@ -79,7 +74,7 @@ fn maybe_pad_line(line: &str) -> String {
         d if d <= 0 => String::from(line),
         _ => {
             let mut padded = String::from(line);
-            for i in 1..=diff {
+            for _i in 1..=diff {
                 padded.push(' ');
             }
             return padded;

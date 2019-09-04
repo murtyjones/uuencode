@@ -12,4 +12,3 @@ description = "uuencoder/decoder"
 keywords = ["uuencode", "uudecode"]
 
 [dependencies]
-binascii = "0.1.2"
