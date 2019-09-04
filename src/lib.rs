@@ -90,10 +90,8 @@ fn maybe_pad_line(line: &str) -> String {
 
 mod test {
     use crate::*;
-    use std::io::prelude::*;
-    use std::fs::File;
 
-    fn write_to_file(filename: String, data: &[u8]) -> std::io::Result<()> {
+    fn _write_to_file(filename: String, data: &[u8]) -> std::io::Result<()> {
         let mut pos = 0;
         let mut buffer = std::fs::File::create(format!("/Users/murtyjones/Desktop/{}", filename)).expect("Couldn't make file!");
         while pos < data.len() {
@@ -117,7 +115,6 @@ mod test {
         let filename = "amglogoa09.jpg";
         let original_encoded = include_str!("../images/logo_encoded_padded").trim();
         let decoded = uudecode(original_encoded).unwrap();
-        write_to_file(decoded.1, decoded.0.as_slice());
         let encoded = uuencode(filename, decoded.0.as_slice());
         assert_eq!(original_encoded, encoded);
     }
@@ -127,7 +124,6 @@ mod test {
         let filename = "aumpiechartscombinded5217v4.jpg";
         let original_encoded = include_str!("../images/piechart_encoded_padded").trim();
         let decoded = uudecode(original_encoded).unwrap();
-        write_to_file(decoded.1, decoded.0.as_slice());
         let encoded = uuencode(filename, decoded.0.as_slice());
         assert_eq!(original_encoded, encoded);
     }
