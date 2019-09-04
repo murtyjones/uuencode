@@ -32,7 +32,7 @@ pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
         if let Some(chr) = padded_line.chars().nth(0) {
             match chr {
                 '`' => break,
-                ' '...'_' => {
+                ' '..='_' => {
                     for dc in padded_line[1..].as_bytes().chunks(4) {
                         output.extend( uudecode_chunk(dc) );
                     }
