@@ -25,12 +25,11 @@ pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
 
     let mut output: Vec<u8> = Vec::new();
     for line in lines {
-        let padded_line = maybe_pad_line(line);
-        if let Some(chr) = padded_line.chars().nth(0) {
+        if let Some(chr) = line.chars().nth(0) {
             match chr {
                 '`' => break,
                 ' '...'_' => {
-                    for dc in padded_line[1..].as_bytes().chunks(4) {
+                    for dc in line[1..].as_bytes().chunks(4) {
                         output.extend( uudecode_chunk(dc) );
                     }
                 },
@@ -65,26 +64,21 @@ fn uudecode_chunk(bytes: &[u8]) -> impl Iterator<Item=u8> {
     })
 }
 
-/// Ensure that a line has sufficient padding
-fn maybe_pad_line(line: &str) -> String {
-    const REQUIRED_LENGTH: usize = 61;
-    let actual_length = line.len();
-    let diff = REQUIRED_LENGTH - actual_length;
-    match diff {
-        d if d <= 0 => String::from(line),
-        _ => {
-            let mut padded = String::from(line);
-            for _i in 1..=diff {
-                padded.push(' ');
-            }
-            return padded;
-        },
-    }
-}
-
 
 mod test {
     use crate::*;
+    use std::io::prelude::*;
+    use std::fs::File;
+
+    fn write_to_file(filename: String, data: &[u8]) -> std::io::Result<()> {
+        let mut pos = 0;
+        let mut buffer = std::fs::File::create(format!("/Users/murtyjones/Desktop/{}", filename)).expect("Couldn't make file!");
+        while pos < data.len() {
+            let bytes_written = buffer.write(&data[pos..]).expect("Couldn't write to file!");
+            pos += bytes_written;
+        }
+        Ok(())
+    }
 
     #[test]
     fn test_cat() {
@@ -101,6 +95,7 @@ mod test {
         let original_encoded = include_str!("../images/logo_encoded_padded").trim();
         let decoded = uudecode(original_encoded).unwrap();
         let encoded = uuencode(filename, decoded.0.as_slice());
+        write_to_file(decoded.1, decoded.0.as_slice());
         assert_eq!(original_encoded, encoded);
     }
 
@@ -110,14 +105,7 @@ mod test {
         let original_encoded = include_str!("../images/piechart_encoded_padded").trim();
         let decoded = uudecode(original_encoded).unwrap();
         let encoded = uuencode(filename, decoded.0.as_slice());
+        write_to_file(decoded.1, decoded.0.as_slice());
         assert_eq!(original_encoded, encoded);
-    }
-    
-    #[test]
-    fn test_pad_line() {
-        let unpadded = r#"=HHH **** "BBB@ HHHH **** "BBB@ HHHH _]D!"#;
-        let padded = r#"=HHH **** "BBB@ HHHH **** "BBB@ HHHH _]D!                    "#;
-        let r = maybe_pad_line(unpadded);
-        assert_eq!(padded, r);
     }
 }
