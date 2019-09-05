@@ -1,7 +1,9 @@
+#[deny(missing_docs)]
+
+/// Encodes bytes into a uuencoded string.
 pub fn uuencode(filename: &str, input: &[u8]) -> String {
     let mut output : Vec<u8> = Vec::new();
     // in rust, char != u8, so we need to prefix with a b
-
     output.extend(b"begin 644 ");
     output.extend(filename.as_bytes());
     output.extend(b"\n");
@@ -18,6 +20,7 @@ pub fn uuencode(filename: &str, input: &[u8]) -> String {
     String::from_utf8(output).unwrap()
 }
 
+/// Decodes a uuencoded string into bytes, and returns those bytes and the file's name
 pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
     let mut lines = encoded.lines();
 
@@ -28,7 +31,7 @@ pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
         if let Some(chr) = line.chars().nth(0) {
             match chr {
                 '`' => break,
-                ' '...'_' => {
+                ' '..='_' => {
                     for dc in line[1..].as_bytes().chunks(4) {
                         output.extend( uudecode_chunk(dc) );
                     }
@@ -40,6 +43,7 @@ pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
     Some((output, name))
 }
 
+/// Encodes a few bytes
 fn uuencode_chuck(input: &[u8]) -> [u8;4] {
     // padding is hard
     let i = [ input[0],
@@ -52,8 +56,9 @@ fn uuencode_chuck(input: &[u8]) -> [u8;4] {
         32 + ((i[2]<<2) >> 2) ]
 }
 
-fn uudecode_chunk(bytes: &[u8]) -> impl Iterator<Item=u8> {
-    let combined: u32 = bytes.iter().enumerate()
+/// Decodes a few bytes
+fn uudecode_chunk(input: &[u8]) -> impl Iterator<Item=u8> {
+    let combined: u32 = input.iter().enumerate()
         .fold(0, | acc, (index, &val) | {
             acc + (((val as u32) - 32) << 6 * (3 - index))
         });
@@ -63,7 +68,6 @@ fn uudecode_chunk(bytes: &[u8]) -> impl Iterator<Item=u8> {
         val as u8
     })
 }
-
 
 mod test {
     use crate::*;
