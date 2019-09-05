@@ -16,7 +16,12 @@ Then use the library to encode or decode some data:
 ```rust
 extern crate uuencode;
 
-
+fn main() {
+    let filename = "wow.jpg";
+    let original_decoded = "Cat";
+    let encoded = uuencode(filename, original_decoded.as_bytes());
+    println!("{}", encoded); // begin 644 wow.jpg\n#0V%T\n`\nend
+}
 ```
 
 

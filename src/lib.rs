@@ -87,10 +87,19 @@ mod test {
     #[test]
     fn test_cat() {
         let filename = "wow.jpg";
-        let original_encoded = "begin 644 wow.jpg\nM0V%T                                                        \n`\nend";
+        let original_encoded = "begin 644 wow.jpg\n#0V%T\n`\nend";
         let decoded = uudecode(original_encoded).unwrap();
         let encoded = uuencode(filename, decoded.0.as_slice());
         assert_eq!(original_encoded, encoded);
+    }
+
+    #[test]
+    fn test_cat_decoded() {
+        let filename = "wow.jpg";
+        let original_decoded = "Cat";
+        let encoded = uuencode(filename, original_decoded.as_bytes());
+        let decoded = uudecode(&*encoded).unwrap().0;
+        assert_eq!(original_decoded, std::str::from_utf8(&decoded).unwrap());
     }
 
     #[test]
