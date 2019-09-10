@@ -28,11 +28,11 @@ pub fn uudecode(encoded: &str) -> Option<(Vec<u8>, String)> {
 
     let mut output: Vec<u8> = Vec::new();
     for line in lines {
-        let line = maybe_pad_line(line);
         if let Some(chr) = line.chars().nth(0) {
             match chr {
                 '`' => break,
                 ' '..='_' => {
+                    let line = maybe_pad_line(line);
                     for dc in line[1..].as_bytes().chunks(4) {
                         output.extend( uudecode_chunk(dc) );
                     }
@@ -124,6 +124,16 @@ mod test {
     fn test_logo() {
         let filename = "amglogoa09.jpg";
         let original_encoded = include_str!("../images/logo_encoded").trim();
+        let decoded = uudecode(original_encoded).unwrap();
+        let encoded = uuencode(filename, decoded.0.as_slice());
+        write_to_file(decoded.1, decoded.0.as_slice());
+//        assert_eq!(original_encoded, encoded);
+    }
+
+    #[test]
+    fn test_spreadsheet_1() {
+        let filename = "Financial_Report.xlsx";
+        let original_encoded = include_str!("../xlsx/spreadsheet_1").trim();
         let decoded = uudecode(original_encoded).unwrap();
         let encoded = uuencode(filename, decoded.0.as_slice());
         write_to_file(decoded.1, decoded.0.as_slice());

@@ -1,6 +1,6 @@
 [package]
 name = "uuencode"
-version = "0.1.4"
+version = "0.1.5"
 authors = [
     "/u/Badel2",
     "/u/iamnotposting",
